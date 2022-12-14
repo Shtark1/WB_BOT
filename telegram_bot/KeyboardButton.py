@@ -4,6 +4,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 btn_profile = KeyboardButton("Профиль")
 btn_subscription = KeyboardButton("Подписка")
 btn_products = KeyboardButton("Товары")
+btn_info = KeyboardButton("О проекте")
+btn_ref = KeyboardButton("Реферальная система")
 
 # КНОПКИ ПОДПИСКИ
 btn_type_of_subscription1 = InlineKeyboardButton(text="10 товаров - 150р", callback_data="1")
@@ -32,7 +34,7 @@ btn_tot_products = InlineKeyboardButton(text="✔️ Да ✔️", callback_data
 btn_ne_tot_products = InlineKeyboardButton(text="✖️ Нет ✖️", callback_data="ne_tot_products")
 
 BUTTON_TYPES = {
-    "BTN_HOME": ReplyKeyboardMarkup(resize_keyboard=True).add(btn_profile, btn_subscription).add(btn_products),
+    "BTN_HOME": ReplyKeyboardMarkup(resize_keyboard=True).add(btn_profile, btn_subscription).add(btn_products).add(btn_info, btn_ref),
     "BTN_SUBSCRIPTIONS_PRICE": InlineKeyboardMarkup().add(btn_type_of_subscription1, btn_type_of_subscription2).add(
         btn_type_of_subscription3, btn_type_of_subscription4).add(btn_cancellation),
 

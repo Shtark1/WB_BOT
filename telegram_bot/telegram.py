@@ -42,10 +42,7 @@ async def start_command(message: Message):
         db.add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
         await message.answer(f"{MESSAGES['start']} {message.from_user.first_name}", reply_markup=BUTTON_TYPES["BTN_HOME"])
     else:
-        await message.answer(f"{MESSAGES['second_start']} {message.from_user.first_name}", reply_markup=BUTTON_TYPES["BTN_HOME"])
-
-    # await bot.send_photo(message.chat.id, "https://basket-05.wb.ru/vol981/part98157/98157706/images/big/1.jpg", reply_markup=BUTTON_TYPES["BTN_VIEWS_PRODUCTS"],
-    #                      caption="fefefesfesf")
+        await message.answer(f"{message.from_user.username}, {MESSAGES['second_start']}", reply_markup=BUTTON_TYPES["BTN_HOME"])
 
 
 @dp.message_handler(commands=['help'])
@@ -61,12 +58,15 @@ async def profile_info(message: Message):
     user_sub = time_sub_day(db.get_time_sub(message.from_user.id))
     sub_count_products = db.get_sub_count_products(message.from_user.id)
     sub_count_products = re.search(r'\d+', str(sub_count_products))[0]
-
+    count_products_user = len(db.get_add_tovar(message.chat.id))
     if not user_sub:
         user_sub = "Подписки нет!!!"
         sub_count_products = 0
 
-    await message.answer(f"Ваш ник: {message.from_user.username} \n Подписка: {user_sub} \n MAX количество товаров для парсинга: {sub_count_products}")
+    await message.answer(f"""Ваш ник: {message.from_user.username}
+Подписка: {user_sub}
+MAX количество товаров для парсинга: {sub_count_products} 
+Добавленно товаров: {count_products_user}""")
 
 
 @dp.message_handler(lambda message: message.text.lower() == 'подписка')
@@ -174,7 +174,6 @@ async def data_add_one(callback: CallbackQuery):
 @dp.message_handler(state=StatesSaveProducts.STATE_ADD_ONE)
 async def add_one(message: Message, state: FSMContext):
     try:
-        # art = int(re.sub(r"\d+", "", message.text))
         art = int(message.text)
         info_product = await parse(art)
 
@@ -216,8 +215,9 @@ async def type_of_add(callback: CallbackQuery):
 
         if not est:
             db.add_info_tovar(art, callback.message.chat.id)
-            await callback.message.answer(f'{MESSAGES["there_is_product"]} ', reply_markup=BUTTON_TYPES["BTN_HOME"])
-
+            await callback.message.answer(MESSAGES["there_is_product"], reply_markup=BUTTON_TYPES["BTN_HOME"])
+        else:
+            await callback.message.answer(MESSAGES["there_is_product_repeat"], reply_markup=BUTTON_TYPES["BTN_HOME"])
         in_products_table = db.there_is_in_roducts_table(art)
 
         if not in_products_table:
