@@ -1,10 +1,10 @@
 import datetime
 import time
-import requests
 
 import openpyxl
 from openpyxl.worksheet import worksheet
 
+from dop_functions.parser import parse
 from cfg.database import Database
 db = Database('cfg/database')
 
@@ -28,7 +28,7 @@ def days_to_secons(days):
 
 
 
-async def doc_exel(name):
+async def doc_exel(name, bot):
     i=1
     while True:
         filename = f"file/{name.from_user.id}.xlsx"
@@ -37,44 +37,41 @@ async def doc_exel(name):
 
 
         art = sheet[f"A{i}"].value
-
         if art is None:
             break
 
         try:
-            art = int(art)
-            price = int(sheet[f"B{i}"].value)
-            db.add_info_tovar(art, price, name.from_user.id)
+            info_product = await parse(art)
+            est = db.there_is_product(name.chat.id, art)
+
+            if not est:
+                db.add_info_tovar(art, name.chat.id)
+
+                await bot.send_photo(name.chat.id, info_product[0],caption=f"""!!! Строка {i} записана !!!
+Название: {info_product[5]}
+Ссылка: {info_product[-1]}
+
+Цена Без скидки: {info_product[1]}руб
+Цена со скидкой: {info_product[2]}руб
+
+Артикул: {art}""")
+
+            else:
+                # db.update_info_tovar(art, name.chat.id)
+                await bot.send_photo(name.chat.id, info_product[0],caption=f"""!!! Строка {i}, такой товар есть !!!
+Название: {info_product[5]}
+Ссылка: {info_product[-1]}
+
+Цена Без скидки: {info_product[1]}руб
+Цена со скидкой: {info_product[2]}руб
+
+Артикул: {art}""")
+
+            in_products_table = db.there_is_in_roducts_table(art)
+            if not in_products_table:
+                db.add_in_products_table(art, info_product[4])
+
         except:
-            # print("Не число или другая ошибка")
-            await name.answer(f"Строка {i} не записалась, там ошибка")
+            await name.answer(f"Строка {i} не записалась, такого товара нет")
 
         i+=1
-
-async def parse_product_page(nm_id):
-    headers = {
-        'Accept': '*/*',
-        'Accept-Language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Connection': 'keep-alive',
-        'DNT': '1',
-        'Origin': 'https://www.wildberries.ru',
-        'Referer': 'https://www.wildberries.ru/catalog/13684682/detail.aspx?targetUrl=GP',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'cross-site',
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
-        'sec-ch-ua': '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Linux"',
-    }
-
-    url = f'https://card.wb.ru/cards/detail?spp=38&regions=80,68,64,83,4,38,33,70,82,69,86,30,40,48,1,22,66,31' \
-          f'&pricemarginCoeff=1.0&reg=1&appType=1&emp=0&locale=ru&lang=ru&curr=rub&couponsGeo=2,12,7,3,6,22,21,8' \
-          f'&sppFixGeo=4&dest=-1059500,-77665,-1099982,-4039467&nm={nm_id}'
-
-    data = requests.get(url, headers=headers).json()
-    try:
-        sale = data['data']['products'][0]['extended']['clientSale']
-    except:
-        sale = 0
-    return (nm_id, sale)

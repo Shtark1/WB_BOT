@@ -59,24 +59,40 @@ class Database:
                 return False
 
 
-    def add_info_tovar(self, art, price, id_chat):
+    def add_info_tovar(self, art, id_chat):
         with self.connection:
-            return self.cursor.execute(f"""INSERT INTO users_products
-                                      (art, price, id_chat)
-                                      VALUES
-                                      ({art}, {price}, {id_chat});""")
+            return self.cursor.execute(f"""INSERT INTO users_products (art, id_chat) VALUES ({art}, {id_chat});""")
+
+    # def update_info_tovar(self, art, id_chat):
+    #     with self.connection:
+    #         return self.cursor.execute(f"UPDATE users_products SET WHERE art = {art} and id_chat = {id_chat};")
 
     def get_add_tovar(self, id_chat):
         with self.connection:
-            result = self.cursor.execute("SELECT `art`, `price` FROM `users_products` WHERE `id_chat` = ?", (id_chat,)).fetchall()
+            result = self.cursor.execute("SELECT `art` FROM `users_products` WHERE `id_chat` = ?", (id_chat,)).fetchall()
             return result
 
-    def delete_tovar(self, art, price, id_chat):
+    def delete_tovar(self, art, id_chat):
         with self.connection:
-            result = self.cursor.execute("DELETE FROM `users_products` WHERE `art` = ? and `price` = ? and `id_chat` = ?", (art, price, id_chat)).fetchall()
+            result = self.cursor.execute("DELETE FROM `users_products` WHERE `art` = ? and `id_chat` = ?", (art, id_chat)).fetchall()
             return result
 
     def delete_all_tovar(self, id_chat):
         with self.connection:
             result = self.cursor.execute("DELETE FROM `users_products` WHERE `id_chat` = ?", (id_chat,)).fetchall()
             return result
+
+    def there_is_product(self, id_chat, art):
+        with self.connection:
+            result = self.cursor.execute("SELECT `art` FROM `users_products` WHERE `id_chat` = ? and `art` = ?", (id_chat, art)).fetchall()
+            return result
+
+
+    def there_is_in_roducts_table(self, art):
+        with self.connection:
+            result = self.cursor.execute("SELECT `art` FROM `products` WHERE `art` = ?", (art,)).fetchall()
+            return result
+
+    def add_in_products_table(self, art, price_spp):
+        with self.connection:
+            return self.cursor.execute(f"INSERT INTO products (art, price_spp) VALUES ({art}, {price_spp});")

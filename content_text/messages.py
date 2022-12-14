@@ -13,15 +13,18 @@ no_subscription_message = "Купите подписку, для возможн�
 there_is_subscription_message = """Выберите функцию
     Добавить товар для мониторинга цены
     Посмотреть мои товары"""
-add_product_message = """ Добавить один товар, нужно вписать артикул товара и через пробел цену
-Пример: 349358493 1500
-Добавить несколько товаров, нужно отроавить Exel документ в котором в столбце A находятся артиклы, а в столбце B цены """
-add_products_one_message = "Впиши артикул и цену"
+add_product_message = """ Добавить один товар, нужно вписать артикул товара
+Пример: 349358493
+Добавить несколько товаров, нужно отроавить Exel документ в котором в столбце A находятся артиклы"""
+add_products_one_message = "Впиши артикул:"
 add_products_more_message = "Отправь Exel файл"
 there_is_product_message = "Товар добавлен!!!"
+update_price_products_message = "Такой товар есть!"
+ne_tot_products_message = "Товар не добавлен!!!"
 no_such_product_message = "Такого товара нет (("
 there_is_exel_message = "Это Exel файл!"
 not_exel_message = "Это не Exel файл!"
+message_instead_of_file = "Нужно отправить Exel файл, а не сообщение("
 no_added_products_messsage = "Нет добавленных товаров"
 delete_product_message = "✔️ - оставить товар\n✖️ - удалить товар \n ❌ DEL ❌ - удалить все товары из списка"
 delete_all_product_message = "Всё DELETE"
@@ -43,9 +46,12 @@ MESSAGES = {
     "add_products_one_message": add_products_one_message,
     "add_products_more_message": add_products_more_message,
     "there_is_product": there_is_product_message,
+    "update_price_products": update_price_products_message,
+    "ne_tot_products": ne_tot_products_message,
     "no_such_product": no_such_product_message,
     "there_is_exel": there_is_exel_message,
     "not_exel": not_exel_message,
+    "message_instead_of_file": message_instead_of_file,
     "no_added_products": no_added_products_messsage,
     "delete_product": delete_product_message,
     "delete_all_product": delete_all_product_message,

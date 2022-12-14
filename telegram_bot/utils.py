@@ -6,3 +6,6 @@ class StatesSaveProducts(Helper):
 
     STATE_ADD_ONE = ListItem()
     STATE_ADD_MORE = ListItem()
+
+    STATE_ADD_ONE_1 = ListItem()
+

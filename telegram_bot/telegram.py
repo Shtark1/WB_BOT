@@ -3,9 +3,9 @@ import os
 import time
 import re
 
-from aiogram import Bot
+from aiogram import Bot, types
 from aiogram.types import Message, CallbackQuery, PreCheckoutQuery, ContentTypes
-from aiogram import types
+from aiogram.dispatcher import FSMContext
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
@@ -19,7 +19,8 @@ from telegram_bot.KeyboardButton import BUTTON_TYPES
 
 from cfg.cfg import TOKEN, YOOPAYMENT
 from cfg.database import Database
-from dop_functions.time_function import time_sub_day, days_to_secons, doc_exel, parse_product_page
+from dop_functions.time_function import time_sub_day, days_to_secons, doc_exel
+from dop_functions.parser import parse
 
 
 db = Database('cfg/database')
@@ -43,6 +44,8 @@ async def start_command(message: Message):
     else:
         await message.answer(f"{MESSAGES['second_start']} {message.from_user.first_name}", reply_markup=BUTTON_TYPES["BTN_HOME"])
 
+    # await bot.send_photo(message.chat.id, "https://basket-05.wb.ru/vol981/part98157/98157706/images/big/1.jpg", reply_markup=BUTTON_TYPES["BTN_VIEWS_PRODUCTS"],
+    #                      caption="fefefesfesf")
 
 
 @dp.message_handler(commands=['help'])
@@ -152,6 +155,9 @@ async def process_pay(message: Message):
 # ===================================================
 @dp.callback_query_handler(lambda c: c.data == "add_products")
 async def type_of_add(callback: CallbackQuery):
+    count_add_products = len(db.get_add_tovar(callback.message.chat.id))
+
+
     await callback.message.edit_text(MESSAGES["add_product"])
     await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES["BTN_ADD_PRODUCTS"])
 
@@ -166,24 +172,65 @@ async def data_add_one(callback: CallbackQuery):
     await state.set_state(StatesSaveProducts.all()[1])
 
 
-
+# ================= Тот Или Не Тот =================
 @dp.message_handler(state=StatesSaveProducts.STATE_ADD_ONE)
-async def add_one(message: Message):
+async def add_one(message: Message, state: FSMContext):
     try:
-        art = int(re.sub(r" \d+", "", message.text))
-        price = int(re.sub(r'\d+ ', '', message.text))
+        # art = int(re.sub(r"\d+", "", message.text))
+        art = int(message.text)
+        info_product = await parse(art)
 
-        db.add_info_tovar(art, price, message.from_user.id)
-        # Здесь добавь функцию получения цены
-        #
-        await message.answer(f'{MESSAGES["there_is_product"]} ', reply_markup=BUTTON_TYPES["BTN_HOME"])
+        await state.update_data(art=art)
+        await state.update_data(price_spp=info_product[4])
+
+        await bot.send_photo(message.chat.id, info_product[0], reply_markup=BUTTON_TYPES["BTN_TOT_OR_NO"],
+                             caption=f"""Вы искали этот товар?
+                             
+Название: {info_product[5]}
+Ссылка: {info_product[-1]}
+
+Цена Без скидки: {info_product[1]}руб
+Цена со скидкой: {info_product[2]}руб
+
+Артикул: {art}
+""")
+        state = dp.current_state(user=message.from_user.id)
+        await state.set_state(StatesSaveProducts.all()[2])
 
     except:
         await message.answer(MESSAGES["no_such_product"], reply_markup=BUTTON_TYPES["BTN_HOME"])
+        await state.reset_state(with_data=False)
 
-    state = dp.current_state(user=message.from_user.id)
+
+# ===================== Тот Товар ======================
+@dp.callback_query_handler(state=StatesSaveProducts.STATE_ADD_ONE_1)
+async def type_of_add(callback: CallbackQuery):
+    state = dp.current_state(user=callback.from_user.id)
+
+    if callback.data == "tot_products":
+        data = await state.get_data()
+        art = data["art"]
+        price_spp = data["price_spp"]
+
+
+        est = db.there_is_product(callback.message.chat.id, art)
+        await callback.message.edit_reply_markup()
+
+        if not est:
+            db.add_info_tovar(art, callback.message.chat.id)
+            await callback.message.answer(f'{MESSAGES["there_is_product"]} ', reply_markup=BUTTON_TYPES["BTN_HOME"])
+
+        in_products_table = db.there_is_in_roducts_table(art)
+
+        if not in_products_table:
+            db.add_in_products_table(art, price_spp)
+
+
+    elif callback.data == "ne_tot_products":
+        await callback.message.edit_reply_markup()
+        await callback.message.answer(MESSAGES["ne_tot_products"], reply_markup=BUTTON_TYPES["BTN_HOME"])
+
     await state.reset_state(with_data=False)
-
 
 # ================= Добавление Нескольких ===============
 @dp.callback_query_handler(lambda c: c.data == "add_products_more")
@@ -203,7 +250,7 @@ async def add_more(message: Message):
                 destination_file=f"file/{message.from_user.id}.xlsx",
             )
 
-        await doc_exel(message)
+        await doc_exel(message, bot)
 
         await message.answer(MESSAGES["there_is_exel"], reply_markup=BUTTON_TYPES["BTN_HOME"])
         os.remove(f"file/{message.from_user.id}.xlsx")
@@ -214,6 +261,12 @@ async def add_more(message: Message):
     state = dp.current_state(user=message.from_user.id)
     await state.reset_state(with_data=False)
 
+# =================== Если вместо файла отправили сообщение ===================
+@dp.message_handler(state=StatesSaveProducts.STATE_ADD_MORE)
+async def add_more(message: Message):
+    await message.answer(MESSAGES["message_instead_of_file"],  reply_markup=BUTTON_TYPES["BTN_HOME"])
+    state = dp.current_state(user=message.from_user.id)
+    await state.reset_state(with_data=False)
 
 
 # ===================================================
@@ -229,11 +282,16 @@ async def views_products(callback: CallbackQuery):
 
     else:
         for art_price in get_tovat_art_price:
-            art_price_message = re.sub(r'\(', 'Артикул: ', str(art_price))
-            art_price_message = re.sub(r', ', '\nЦена: ', str(art_price_message))
-            art_price_message = re.sub(r'\)', '', str(art_price_message))
+            art = re.sub(r'\(', '', str(art_price))
+            art = re.sub(r',\)', '', str(art))
 
-            await callback.message.answer(art_price_message, reply_markup=BUTTON_TYPES["BTN_VIEWS_PRODUCTS"])
+
+            info_product = await parse(int(art))
+
+            await bot.send_photo(callback.message.chat.id, info_product[0], caption=f"""Название: {info_product[5]}
+Ссылка: {info_product[-1]}
+
+Артикул: {art}""", reply_markup=BUTTON_TYPES["BTN_VIEWS_PRODUCTS"])
 
         await callback.message.answer(MESSAGES["delete_product"], reply_markup=BUTTON_TYPES["BTN_DELETE_ALL_PRODUCTS"])
 
@@ -247,13 +305,12 @@ async def save_products(callback: CallbackQuery):
 # ================== Удалить Товар ================
 @dp.callback_query_handler(lambda c: c.data == "delete_products")
 async def delete_products(callback: CallbackQuery):
-    art_price = re.sub(r'[Артикул: Цена: ]', '', str(callback.message.text))
-    art = re.sub(r'\n\d+', '', art_price)
-    price = re.sub(r'\d+\n', '', art_price)
+    art = re.search(r'Артикул: \d+', str(callback.message.caption))[0]
+    art = re.sub(r'Артикул: ', '', art)
 
     await callback.message.edit_reply_markup()
-    await callback.message.edit_text(f"Товар удалён:\n{callback.message.text}")
-    db.delete_tovar(art, price, callback.from_user.id)
+    await callback.message.edit_caption(f"{callback.message.caption}\n\n  ❌ Товар удалён ❌")
+    db.delete_tovar(art, callback.message.chat.id)
 
     await callback.answer()
 
