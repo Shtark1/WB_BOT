@@ -59,10 +59,14 @@ async def help_command(message: Message):
 @dp.message_handler(lambda message: message.text.lower() == 'профиль')
 async def profile_info(message: Message):
     user_sub = time_sub_day(db.get_time_sub(message.from_user.id))
+    sub_count_products = db.get_sub_count_products(message.from_user.id)
+    sub_count_products = re.search(r'\d+', str(sub_count_products))[0]
+
     if not user_sub:
         user_sub = "Подписки нет!!!"
+        sub_count_products = 0
 
-    await message.answer(f"Ваш ник: {message.from_user.username} \n Подписка: {user_sub}")
+    await message.answer(f"Ваш ник: {message.from_user.username} \n Подписка: {user_sub} \n MAX количество товаров для парсинга: {sub_count_products}")
 
 
 @dp.message_handler(lambda message: message.text.lower() == 'подписка')
@@ -88,21 +92,21 @@ async def buy_subscriptions(callback: CallbackQuery):
     payload = ""
 
     if callback.data == "1":
-        label = "Месяц"
+        label = "10 товаров"
         amount = 15000
-        payload = "month_sub"
+        payload = "month_sub_10"
     if callback.data == "2":
-        label = "2 Месяцa"
-        amount = 30000
-        payload = "month_sub_2"
+        label = "50 товаров"
+        amount = 35000
+        payload = "month_sub_50"
     if callback.data == "3":
-        label = "3 Месяцев"
-        amount = 45000
-        payload = "month_sub_3"
+        label = "100 товаров"
+        amount = 55000
+        payload = "month_sub_100"
     if callback.data == "4":
-        label = "6 Месяцев"
-        amount = 90000
-        payload = "month_sub_6"
+        label = "1000 товаров"
+        amount = 75000
+        payload = "month_sub_1000"
 
     PRICE = types.LabeledPrice(label=label, amount=amount)
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
@@ -125,25 +129,16 @@ async def process_pre_checkout_query(pre_checkout_query: PreCheckoutQuery):
 
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
 async def process_pay(message: Message):
+    if message.successful_payment.invoice_payload == "month_sub_10":
+        db.add_sub_count_producs(message.from_user.id, 10)
+    if message.successful_payment.invoice_payload == "month_sub_50":
+        db.add_sub_count_producs(message.from_user.id, 50)
+    if message.successful_payment.invoice_payload == "month_sub_100":
+        db.add_sub_count_producs(message.from_user.id, 100)
+    if message.successful_payment.invoice_payload == "month_sub_1000":
+        db.add_sub_count_producs(message.from_user.id, 1000)
 
-    user_sub_proverka = time_sub_day(db.get_time_sub(message.from_user.id))
-    if user_sub_proverka == False:
-        user_sub = 0
-    else:
-        user_sub = int(db.get_time_sub(message.from_user.id)) - time.time()
-
-    days_sub_buy = 0
-
-    if message.successful_payment.invoice_payload == "month_sub":
-        days_sub_buy = 30
-    if message.successful_payment.invoice_payload == "month_sub_2":
-        days_sub_buy = 60
-    if message.successful_payment.invoice_payload == "month_sub_3":
-        days_sub_buy = 90
-    if message.successful_payment.invoice_payload == "month_sub_6":
-        days_sub_buy = 180
-
-    time_sub = int(time.time()) + days_to_secons(days_sub_buy) + user_sub
+    time_sub = int(time.time()) + days_to_secons(30)
     db.set_time_sub(message.from_user.id, time_sub)
 
     await bot.send_message(message.from_user.id, MESSAGES["subscription_buy"])
@@ -156,11 +151,14 @@ async def process_pay(message: Message):
 @dp.callback_query_handler(lambda c: c.data == "add_products")
 async def type_of_add(callback: CallbackQuery):
     count_add_products = len(db.get_add_tovar(callback.message.chat.id))
+    sub_count_products = db.get_sub_count_products(callback.from_user.id)
+    sub_count_products = int(re.search(r'\d+', str(sub_count_products))[0])
 
-
-    await callback.message.edit_text(MESSAGES["add_product"])
-    await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES["BTN_ADD_PRODUCTS"])
-
+    if count_add_products < sub_count_products:
+        await callback.message.edit_text(MESSAGES["add_product"])
+        await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES["BTN_ADD_PRODUCTS"])
+    else:
+        await callback.message.edit_text(MESSAGES["max_products_sub"])
 
 # ================= Добавление одного ===============
 @dp.callback_query_handler(lambda c: c.data == "add_products_one")
@@ -311,6 +309,10 @@ async def delete_products(callback: CallbackQuery):
     await callback.message.edit_reply_markup()
     await callback.message.edit_caption(f"{callback.message.caption}\n\n  ❌ Товар удалён ❌")
     db.delete_tovar(art, callback.message.chat.id)
+    get_all_art = db.get_all_users_art(art)
+
+    if get_all_art == []:
+        db.delete_tovar_in_products_table(art)
 
     await callback.answer()
 
@@ -319,7 +321,17 @@ async def delete_products(callback: CallbackQuery):
 async def delete_all_products(callback: CallbackQuery):
     await callback.message.edit_reply_markup()
     await callback.message.edit_text(MESSAGES["delete_all_product"])
+
+    all_art = db.get_all_art_users(callback.from_user.id)
     db.delete_all_tovar(callback.from_user.id)
+
+    for art in all_art:
+        art = int(re.search(r'\d+', str(art))[0])
+
+        get_all_art = db.get_all_users_art(art)
+        if get_all_art == []:
+            db.delete_tovar_in_products_table(art)
+
     await callback.answer()
 
 

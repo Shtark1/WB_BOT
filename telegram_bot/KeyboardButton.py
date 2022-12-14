@@ -6,10 +6,10 @@ btn_subscription = KeyboardButton("Подписка")
 btn_products = KeyboardButton("Товары")
 
 # КНОПКИ ПОДПИСКИ
-btn_type_of_subscription1 = InlineKeyboardButton(text="Месяц - 150р", callback_data="1")
-btn_type_of_subscription2 = InlineKeyboardButton(text="2 Месяцa - 300р", callback_data="2")
-btn_type_of_subscription3 = InlineKeyboardButton(text="3 Месяцев - 450р", callback_data="3")
-btn_type_of_subscription4 = InlineKeyboardButton(text="6 Месяцев - 900р", callback_data="4")
+btn_type_of_subscription1 = InlineKeyboardButton(text="10 товаров - 150р", callback_data="1")
+btn_type_of_subscription2 = InlineKeyboardButton(text="50 товаров - 350р", callback_data="2")
+btn_type_of_subscription3 = InlineKeyboardButton(text="100 товаров - 550р", callback_data="3")
+btn_type_of_subscription4 = InlineKeyboardButton(text="1000 товаров - 750", callback_data="4")
 btn_cancellation = InlineKeyboardButton('✖️ Отмена ✖️', callback_data="cancellation")
 
 # ДОБАВЛЕНИЕ / ПРОСМОТР ТОВАРОВ

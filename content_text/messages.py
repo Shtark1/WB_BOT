@@ -16,6 +16,7 @@ there_is_subscription_message = """Выберите функцию
 add_product_message = """ Добавить один товар, нужно вписать артикул товара
 Пример: 349358493
 Добавить несколько товаров, нужно отроавить Exel документ в котором в столбце A находятся артиклы"""
+max_products_sub_message = "По вашей подписке добавлено максимальное количество товаров!!"
 add_products_one_message = "Впиши артикул:"
 add_products_more_message = "Отправь Exel файл"
 there_is_product_message = "Товар добавлен!!!"
@@ -43,6 +44,7 @@ MESSAGES = {
     "no_subscription": no_subscription_message,
     "there_is_subscription": there_is_subscription_message,
     "add_product": add_product_message,
+    "max_products_sub": max_products_sub_message,
     "add_products_one_message": add_products_one_message,
     "add_products_more_message": add_products_more_message,
     "there_is_product": there_is_product_message,

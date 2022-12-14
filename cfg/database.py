@@ -63,10 +63,6 @@ class Database:
         with self.connection:
             return self.cursor.execute(f"""INSERT INTO users_products (art, id_chat) VALUES ({art}, {id_chat});""")
 
-    # def update_info_tovar(self, art, id_chat):
-    #     with self.connection:
-    #         return self.cursor.execute(f"UPDATE users_products SET WHERE art = {art} and id_chat = {id_chat};")
-
     def get_add_tovar(self, id_chat):
         with self.connection:
             result = self.cursor.execute("SELECT `art` FROM `users_products` WHERE `id_chat` = ?", (id_chat,)).fetchall()
@@ -87,7 +83,6 @@ class Database:
             result = self.cursor.execute("SELECT `art` FROM `users_products` WHERE `id_chat` = ? and `art` = ?", (id_chat, art)).fetchall()
             return result
 
-
     def there_is_in_roducts_table(self, art):
         with self.connection:
             result = self.cursor.execute("SELECT `art` FROM `products` WHERE `art` = ?", (art,)).fetchall()
@@ -96,3 +91,27 @@ class Database:
     def add_in_products_table(self, art, price_spp):
         with self.connection:
             return self.cursor.execute(f"INSERT INTO products (art, price_spp) VALUES ({art}, {price_spp});")
+
+    def add_sub_count_producs(self, user_id, number_of_products):
+        with self.connection:
+            return self.cursor.execute(f"UPDATE users SET number_of_products = {number_of_products} WHERE user_id = {user_id};")
+
+    def get_sub_count_products(self, user_id):
+        with self.connection:
+            result = self.cursor.execute(f"SELECT `number_of_products` FROM `users` WHERE `user_id` = {user_id}").fetchall()
+            return result
+
+    def get_all_users_art(self, art):
+        with self.connection:
+            result = self.cursor.execute(f"SELECT `id_chat` FROM `users_products` WHERE `art` = {art}").fetchall()
+            return result
+
+    def delete_tovar_in_products_table(self, art):
+        with self.connection:
+            result = self.cursor.execute("DELETE FROM `products` WHERE `art` = ?", (art,)).fetchall()
+            return result
+
+    def get_all_art_users(self, user_id):
+        with self.connection:
+            result = self.cursor.execute(f"SELECT `art` FROM `users_products` WHERE `id_chat` = {user_id}").fetchall()
+            return result
