@@ -18,8 +18,13 @@ second_stat_message = """добро пожаловать в Telegram бот от
 Если у вас есть пожелания или замечания по боту - напишите в поддержку: ... или используйте меню /help"""
 
 help_message = """ ЛЮБУЮ ИНФОРМАЦИЮ """
+about_the_project_message = """ ИНФОРМАЦИЯ О ПРОЕКТЕ """
+referral_system_message = """ Информация о реферальной системе, напимер что привядя как миниму 3 человек скидка 30% """
+registered_by_ref_message = """ Вы зарегалимь по реф ссылке!! """
+by_your_link_reg_message = """ По вашей ссылке зарегался новый пользователь """
+you_cant_register_your_link_message = """ Нельзя регаться по своей ссылке """
 
-subscription_description_message = """ ЛЮБАЯ ИНФОРМАЦИЯ О ПОДПИСКИ """
+subscription_description_message = """ Выбери нужное количество товаров для парсинга """
 cancellation_message = """ НАДПИСЬ ЕСЛИ НАЖАЛ ОТМЕНА """
 subscription_buy_message =  "Вам выдана подписка!!!"
 no_subscription_message = "Купите подписку, для возможности мониторинга цен!!!"
@@ -51,7 +56,11 @@ MESSAGES = {
     "second_start": second_stat_message,
 
     "help": help_message,
-
+    "about_the_project": about_the_project_message,
+    "referral_system": referral_system_message,
+    "registered_by_ref": registered_by_ref_message,
+    "by_your_link_reg": by_your_link_reg_message,
+    "you_cant_register_your_link": you_cant_register_your_link_message,
     "subscription_description": subscription_description_message,
     "cancellation": cancellation_message,
     "subscription_buy": subscription_buy_message,
@@ -81,10 +90,27 @@ name_subscription_1 = ""
 name_subscription_2 = ""
 name_subscription_3 = ""
 name_subscription_4 = ""
-price_1 = ''
-price_2 = ''
-price_3 = ''
-price_4 = ''
+# ЦЕНА ДЛЯ 10 ТОВАРОВ
+price_1 = 29000
+price_2 = 79000
+price_3 = 149000
+price_4 = 279000
+# ЦЕНА ДЛЯ 50 ТОВАРОВ
+price_5 = 49000
+price_6 = 119000
+price_7 = 249000
+price_8 = 549000
+# ЦЕНА ДЛЯ 100 ТОВАРОВ
+price_9 = 79000
+price_10 = 209000
+price_11 = 389000
+price_12 = 689000
+# ЦЕНА ДЛЯ 500 ТОВАРОВ
+price_13 = 109000
+price_14 = 299000
+price_15 = 549000
+price_16 = 949000
+
 
 title_message = "Заголовок"
 description_message = "Описание подписки"
@@ -94,10 +120,25 @@ MESSAGES_PAY = {
     "name_subscription_2": name_subscription_2,
     "name_subscription_3": name_subscription_3,
     "name_subscription_4": name_subscription_4,
-    "price_1": price_1,
-    "price_2": price_2,
-    "price_3": price_3,
-    "price_4": price_4,
+    "5": price_1,
+    "6": price_2,
+    "7": price_3,
+    "8": price_4,
+
+    "9": price_5,
+    "10": price_6,
+    "11": price_7,
+    "12": price_8,
+
+    "13": price_9,
+    "14": price_10,
+    "15": price_11,
+    "16": price_12,
+
+    "17": price_13,
+    "18": price_14,
+    "19": price_15,
+    "20": price_16,
 
     "title": title_message,
     "description": description_message,

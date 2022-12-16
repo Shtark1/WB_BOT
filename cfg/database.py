@@ -6,9 +6,12 @@ class Database:
         self.connection = sqlite3.connect(db_file)
         self.cursor = self.connection.cursor()
 
-    def add_user(self, user_id, usernme, nickname):
+    def add_user(self, user_id, usernme, nickname, reffere_id=None):
         with self.connection:
-            return self.cursor.execute("INSERT INTO `users` (`user_id`, `nickname`, signup) VALUES (?, ?, ?)", (user_id, usernme, nickname,))
+            if reffere_id is not None:
+                return self.cursor.execute("INSERT INTO `users` (`user_id`, `nickname`, `signup`, `referrer_id`) VALUES (?, ?, ?, ?)", (user_id, usernme, nickname, reffere_id,))
+            else:
+                return self.cursor.execute("INSERT INTO `users` (`user_id`, `nickname`, `signup`) VALUES (?, ?, ?)", (user_id, usernme, nickname,))
 
     def user_exists(self, user_id):
         with self.connection:
@@ -115,3 +118,7 @@ class Database:
         with self.connection:
             result = self.cursor.execute(f"SELECT `art` FROM `users_products` WHERE `id_chat` = {user_id}").fetchall()
             return result
+
+    def count_referrals(self, user_id):
+        with self.connection:
+            return self.cursor.execute("SELECT COUNT (`id`) as count FROM `users` WHERE `referrer_id` = ?", (user_id,)).fetchone()[0]

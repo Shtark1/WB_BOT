@@ -17,7 +17,7 @@ from telegram_bot.utils import StatesSaveProducts
 from content_text.messages import MESSAGES, MESSAGES_PAY
 from telegram_bot.KeyboardButton import BUTTON_TYPES
 
-from cfg.cfg import TOKEN, YOOPAYMENT
+from cfg.cfg import TOKEN, YOOPAYMENT, BOT_NICKNAME
 from cfg.database import Database
 from dop_functions.time_function import time_sub_day, days_to_secons, doc_exel
 from dop_functions.parser import parse
@@ -39,10 +39,28 @@ dp.middleware.setup(LoggingMiddleware())
 @dp.message_handler(commands=['start'])
 async def start_command(message: Message):
     if not db.user_exists(message.from_user.id):
-        db.add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+        start_message = message.text
+        referrer_id = str(start_message[7:])
+        if referrer_id != "":
+            if referrer_id != str(message.from_user.id):
+                db.add_user(message.from_user.id, message.from_user.username, message.from_user.first_name, referrer_id)
+                await message.answer(MESSAGES["registered_by_ref"])
+                try:
+                    await bot.send_message(referrer_id, MESSAGES["by_your_link_reg"])
+                except:
+                    pass
+            else:
+                db.add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+                await message.answer(MESSAGES["you_cant_register_your_link"])
+        else:
+            db.add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
+
         await message.answer(f"{MESSAGES['start']} {message.from_user.first_name}", reply_markup=BUTTON_TYPES["BTN_HOME"])
     else:
         await message.answer(f"{message.from_user.username}, {MESSAGES['second_start']}", reply_markup=BUTTON_TYPES["BTN_HOME"])
+
+    time_sub = int(time.time()) + days_to_secons(3)
+    db.set_time_sub(message.from_user.id, time_sub)
 
 
 @dp.message_handler(commands=['help'])
@@ -59,6 +77,7 @@ async def profile_info(message: Message):
     sub_count_products = db.get_sub_count_products(message.from_user.id)
     sub_count_products = re.search(r'\d+', str(sub_count_products))[0]
     count_products_user = len(db.get_add_tovar(message.chat.id))
+
     if not user_sub:
         user_sub = "Подписки нет!!!"
         sub_count_products = 0
@@ -82,33 +101,56 @@ async def product_btn(message: Message):
         await bot.send_message(message.from_user.id, MESSAGES["no_subscription"])
 
 
+@dp.message_handler(lambda message: message.text.lower() == "о проекте")
+async def types_of_subscriptions(message: Message):
+    await message.answer(MESSAGES["about_the_project"], reply_markup=BUTTON_TYPES["BTN_HOME"])
+
+
+@dp.message_handler(lambda message: message.text.lower() == "реферальная система")
+async def types_of_subscriptions(message: Message):
+    await message.answer(f"""{MESSAGES['referral_system']}
+    
+https://t.me/{BOT_NICKNAME}?start={message.from_user.id} 
+Кол-во рефералов: {db.count_referrals(message.from_user.id)}""", reply_markup=BUTTON_TYPES["BTN_HOME"])
+
 # ===================================================
 # ================= Покупка подписки ================
 # ===================================================
-@dp.callback_query_handler(lambda c: c.data == "1" or c.data == "2" or c.data == "3" or c.data == "4")
+@dp.callback_query_handler(lambda c: c.data == "10" or c.data == "50" or c.data == "100" or c.data == "500")
 async def buy_subscriptions(callback: CallbackQuery):
+    if int(db.count_referrals(callback.from_user.id)) < 3:
+        # Нет скидки
+        discount = "0%"
+    elif int(db.count_referrals(callback.from_user.id)) < 6:
+        # Скидка 10%
+        discount = "10%"
+    elif int(db.count_referrals(callback.from_user.id)) < 9:
+        # Скидка 20%
+        discount = "20%"
+    else:
+        # Скидка 30%
+        discount = "30%"
+
+    await callback.message.edit_text(f"Выбери на какое время подписка для {callback.data} слов \n Твоя скидка составляет: {discount}%")
+    await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES[f"BTN_SUBSCRIPTIONS_PRICE_TIME_{callback.data}"])
+
+
+
+@dp.callback_query_handler(lambda c: c.data == "5" or c.data == "6" or c.data == "7" or c.data == "8" or c.data == "9" or c.data == "10" or c.data == "11"
+or c.data == "12" or c.data == "13" or c.data == "14" or c.data == "15" or c.data == "16"  or c.data == "17" or c.data == "18" or c.data == "19" or c.data == "20")
+async def buy_subscriptions(callback: CallbackQuery):
+    if int(db.count_referrals(callback.from_user.id)) < 3:
+        discount = 1
+    elif int(db.count_referrals(callback.from_user.id)) < 6:
+        discount = 0.9
+    elif int(db.count_referrals(callback.from_user.id)) < 9:
+        discount = 0.8
+    else:
+        discount = 0.7
+
     label = "Описание"
-    amount = "Цена"
-    payload = ""
 
-    if callback.data == "1":
-        label = "10 товаров"
-        amount = 15000
-        payload = "month_sub_10"
-    if callback.data == "2":
-        label = "50 товаров"
-        amount = 35000
-        payload = "month_sub_50"
-    if callback.data == "3":
-        label = "100 товаров"
-        amount = 55000
-        payload = "month_sub_100"
-    if callback.data == "4":
-        label = "1000 товаров"
-        amount = 75000
-        payload = "month_sub_1000"
-
-    PRICE = types.LabeledPrice(label=label, amount=amount)
+    PRICE = types.LabeledPrice(label=label, amount=int(MESSAGES_PAY[f"{callback.data}"] * discount))
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
     await bot.send_invoice(
         chat_id=callback.message.chat.id,
@@ -118,7 +160,7 @@ async def buy_subscriptions(callback: CallbackQuery):
         currency='RUB',
         prices=[PRICE],
         start_parameter='time-machine-example',
-        payload=payload,
+        payload=f"{callback.data}",
     )
 
 @dp.pre_checkout_query_handler()
@@ -126,19 +168,31 @@ async def process_pre_checkout_query(pre_checkout_query: PreCheckoutQuery):
     await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
 
 
-
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
 async def process_pay(message: Message):
-    if message.successful_payment.invoice_payload == "month_sub_10":
-        db.add_sub_count_producs(message.from_user.id, 10)
-    if message.successful_payment.invoice_payload == "month_sub_50":
-        db.add_sub_count_producs(message.from_user.id, 50)
-    if message.successful_payment.invoice_payload == "month_sub_100":
-        db.add_sub_count_producs(message.from_user.id, 100)
-    if message.successful_payment.invoice_payload == "month_sub_1000":
-        db.add_sub_count_producs(message.from_user.id, 1000)
+    payload_name = message.successful_payment.invoice_payload
+    time_sub = 0
 
-    time_sub = int(time.time()) + days_to_secons(30)
+    # Добавление кол-ва товаров
+    if payload_name == "5" or payload_name == "6" or payload_name == "7" or payload_name == "8":
+        db.add_sub_count_producs(message.from_user.id, 10)
+    if payload_name == "9" or payload_name == "10" or payload_name == "11" or payload_name == "12":
+        db.add_sub_count_producs(message.from_user.id, 50)
+    if payload_name == "13" or payload_name == "14" or payload_name == "15" or payload_name == "16":
+        db.add_sub_count_producs(message.from_user.id, 100)
+    if payload_name == "17" or payload_name == "18" or payload_name == "19" or payload_name == "20":
+        db.add_sub_count_producs(message.from_user.id, 500)
+
+    # Добавление времени
+    if payload_name == "5" or payload_name == "9" or payload_name == "13" or payload_name == "17":
+        time_sub = int(time.time()) + days_to_secons(30)
+    if payload_name == "6" or payload_name == "10" or payload_name == "14" or payload_name == "18":
+        time_sub = int(time.time()) + days_to_secons(90)
+    if payload_name == "7" or payload_name == "11" or payload_name == "15" or payload_name == "19":
+        time_sub = int(time.time()) + days_to_secons(180)
+    if payload_name == "8" or payload_name == "12" or payload_name == "16" or payload_name == "20":
+        time_sub = int(time.time()) + days_to_secons(360)
+
     db.set_time_sub(message.from_user.id, time_sub)
 
     await bot.send_message(message.from_user.id, MESSAGES["subscription_buy"])
@@ -180,6 +234,7 @@ async def add_one(message: Message, state: FSMContext):
         await state.update_data(art=art)
         await state.update_data(price_spp=info_product[4])
 
+        state = dp.current_state(user=message.from_user.id)
         await bot.send_photo(message.chat.id, info_product[0], reply_markup=BUTTON_TYPES["BTN_TOT_OR_NO"],
                              caption=f"""Вы искали этот товар?
                              
@@ -188,10 +243,10 @@ async def add_one(message: Message, state: FSMContext):
 
 Цена Без скидки: {info_product[1]}руб
 Цена со скидкой: {info_product[2]}руб
+Цена с СПП: {info_product[4]}руб
 
 Артикул: {art}
 """)
-        state = dp.current_state(user=message.from_user.id)
         await state.set_state(StatesSaveProducts.all()[2])
 
     except:

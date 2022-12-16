@@ -58,6 +58,7 @@ async def doc_exel(name, bot):
     
     Цена Без скидки: {info_product[1]}руб
     Цена со скидкой: {info_product[2]}руб
+    Цена с СПП: {info_product[4]}руб
     
     Артикул: {art}""")
 
@@ -69,6 +70,7 @@ async def doc_exel(name, bot):
     
     Цена Без скидки: {info_product[1]}руб
     Цена со скидкой: {info_product[2]}руб
+    Цена с СПП: {info_product[4]}руб
     
     Артикул: {art}""")
 
