@@ -122,3 +122,17 @@ class Database:
     def count_referrals(self, user_id):
         with self.connection:
             return self.cursor.execute("SELECT COUNT (`id`) as count FROM `users` WHERE `referrer_id` = ?", (user_id,)).fetchone()[0]
+
+    def get_referrer_id(self, user_id):
+        with self.connection:
+            return self.cursor.execute(f"SELECT `referrer_id` FROM `users` WHERE `user_id` = {user_id}").fetchone()[0]
+
+    def add_balance_ref(self, balance_ref, user_id):
+        with self.connection:
+            balance = self.cursor.execute(f"SELECT `balance_ref` FROM `users` WHERE `user_id` = {user_id}").fetchone()[0]
+            balance_ref = balance_ref + balance
+            return self.cursor.execute(f"UPDATE users SET balance_ref = {balance_ref} WHERE user_id = {user_id};")
+
+    def get_balance_ref(self, user_id):
+        with self.connection:
+            return self.cursor.execute(f"SELECT `balance_ref` FROM `users` WHERE `user_id` = {user_id}").fetchone()[0]

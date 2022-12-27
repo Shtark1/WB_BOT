@@ -7,8 +7,8 @@ from openpyxl.worksheet import worksheet
 
 from dop_functions.parser import parse
 from cfg.database import Database
-db = Database('cfg/database')
 
+db = Database('cfg/database')
 
 
 def time_sub_day(get_time):
@@ -23,14 +23,13 @@ def time_sub_day(get_time):
         dt = dt.replace("day", "день")
         return dt
 
+
 def days_to_secons(days):
     return days * 24 * 60 * 60
 
 
-
-
 async def doc_exel(name, bot):
-    i=1
+    i = 1
     filename = f"file/{name.from_user.id}.xlsx"
     book = openpyxl.load_workbook(filename=filename)
     sheet: worksheet = book["Лист1"]
@@ -52,7 +51,7 @@ async def doc_exel(name, bot):
                 if not est:
                     db.add_info_tovar(art, name.chat.id)
 
-                    await bot.send_photo(name.chat.id, info_product[0],caption=f"""!!! Строка {i} записана !!!
+                    await bot.send_photo(name.chat.id, info_product[0], caption=f"""!!! Строка {i} записана !!!
     Название: {info_product[5]}
     Ссылка: {info_product[-1]}
     
@@ -64,7 +63,7 @@ async def doc_exel(name, bot):
 
                 else:
                     # db.update_info_tovar(art, name.chat.id)
-                    await bot.send_photo(name.chat.id, info_product[0],caption=f"""!!! Строка {i}, такой товар есть !!!
+                    await bot.send_photo(name.chat.id, info_product[0], caption=f"""!!! Строка {i}, такой товар есть !!!
     Название: {info_product[5]}
     Ссылка: {info_product[-1]}
     
@@ -81,7 +80,7 @@ async def doc_exel(name, bot):
             except:
                 await name.answer(f"Строка {i} не записалась, такого товара нет")
 
-            i+=1
+            i += 1
 
         else:
             await name.answer("Добавлено максимальное количество товаров по вашей подписке!!")

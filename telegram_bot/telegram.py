@@ -55,12 +55,16 @@ async def start_command(message: Message):
         else:
             db.add_user(message.from_user.id, message.from_user.username, message.from_user.first_name)
 
-        await message.answer(f"{MESSAGES['start']} {message.from_user.first_name}", reply_markup=BUTTON_TYPES["BTN_HOME"])
-    else:
-        await message.answer(f"{message.from_user.username}, {MESSAGES['second_start']}", reply_markup=BUTTON_TYPES["BTN_HOME"])
+        await message.answer(f"{message.from_user.first_name}, {MESSAGES['start']}", reply_markup=BUTTON_TYPES["BTN_HOME"])
 
-    time_sub = int(time.time()) + days_to_secons(3)
-    db.set_time_sub(message.from_user.id, time_sub)
+        time_sub = int(time.time()) + days_to_secons(3)
+        db.set_time_sub(message.from_user.id, time_sub)
+
+    else:
+        await message.answer(f"Ну наконец-то {message.from_user.first_name}, а мы думали, что уже не зайдешь!", reply_markup=BUTTON_TYPES["BTN_HOME"])
+
+
+    print(db.get_referrer_id(message.from_user.id))
 
 
 @dp.message_handler(commands=['help'])
@@ -78,6 +82,13 @@ async def profile_info(message: Message):
     sub_count_products = re.search(r'\d+', str(sub_count_products))[0]
     count_products_user = len(db.get_add_tovar(message.chat.id))
 
+
+    balance_ref_message = ""
+    balance_btn = ""
+    if db.get_balance_ref(message.from_user.id) != 0:
+        balance_ref_message = f"Твой реферальный баланс: {db.get_balance_ref(message.from_user.id)}р"
+        balance_btn = BUTTON_TYPES["BTN_BALANCE"]
+
     if not user_sub:
         user_sub = "Подписки нет!!!"
         sub_count_products = 0
@@ -85,7 +96,8 @@ async def profile_info(message: Message):
     await message.answer(f"""Ваш ник: {message.from_user.username}
 Подписка: {user_sub}
 MAX количество товаров для парсинга: {sub_count_products} 
-Добавленно товаров: {count_products_user}""")
+Добавленно товаров: {count_products_user}
+{balance_ref_message}""", reply_markup=balance_btn)
 
 
 @dp.message_handler(lambda message: message.text.lower() == 'подписка')
@@ -118,20 +130,20 @@ https://t.me/{BOT_NICKNAME}?start={message.from_user.id}
 # ===================================================
 @dp.callback_query_handler(lambda c: c.data == "10" or c.data == "50" or c.data == "100" or c.data == "500")
 async def buy_subscriptions(callback: CallbackQuery):
-    if int(db.count_referrals(callback.from_user.id)) < 3:
-        # Нет скидки
-        discount = "0%"
-    elif int(db.count_referrals(callback.from_user.id)) < 6:
-        # Скидка 10%
-        discount = "10%"
-    elif int(db.count_referrals(callback.from_user.id)) < 9:
-        # Скидка 20%
-        discount = "20%"
-    else:
-        # Скидка 30%
-        discount = "30%"
+    # if int(db.count_referrals(callback.from_user.id)) < 3:
+    #     # Нет скидки
+    #     discount = "0%"
+    # elif int(db.count_referrals(callback.from_user.id)) < 6:
+    #     # Скидка 10%
+    #     discount = "10%"
+    # elif int(db.count_referrals(callback.from_user.id)) < 9:
+    #     # Скидка 20%
+    #     discount = "20%"
+    # else:
+    #     # Скидка 30%
+    #     discount = "30%"
 
-    await callback.message.edit_text(f"Выбери на какое время подписка для {callback.data} слов \n Твоя скидка составляет: {discount}%")
+    await callback.message.edit_text(f"Выбери на какое время подписка для {callback.data} слов.")
     await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES[f"BTN_SUBSCRIPTIONS_PRICE_TIME_{callback.data}"])
 
 
@@ -139,18 +151,18 @@ async def buy_subscriptions(callback: CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data == "5" or c.data == "6" or c.data == "7" or c.data == "8" or c.data == "9" or c.data == "10" or c.data == "11"
 or c.data == "12" or c.data == "13" or c.data == "14" or c.data == "15" or c.data == "16"  or c.data == "17" or c.data == "18" or c.data == "19" or c.data == "20")
 async def buy_subscriptions(callback: CallbackQuery):
-    if int(db.count_referrals(callback.from_user.id)) < 3:
-        discount = 1
-    elif int(db.count_referrals(callback.from_user.id)) < 6:
-        discount = 0.9
-    elif int(db.count_referrals(callback.from_user.id)) < 9:
-        discount = 0.8
-    else:
-        discount = 0.7
+    # if int(db.count_referrals(callback.from_user.id)) < 3:
+    #     discount = 1
+    # elif int(db.count_referrals(callback.from_user.id)) < 6:
+    #     discount = 0.9
+    # elif int(db.count_referrals(callback.from_user.id)) < 9:
+    #     discount = 0.8
+    # else:
+    #     discount = 0.7
 
     label = "Описание"
 
-    PRICE = types.LabeledPrice(label=label, amount=int(MESSAGES_PAY[f"{callback.data}"] * discount))
+    PRICE = types.LabeledPrice(label=label, amount=int(MESSAGES_PAY[f"{callback.data}"]))
     await bot.delete_message(callback.from_user.id, callback.message.message_id)
     await bot.send_invoice(
         chat_id=callback.message.chat.id,
@@ -197,6 +209,12 @@ async def process_pay(message: Message):
 
     await bot.send_message(message.from_user.id, MESSAGES["subscription_buy"])
 
+    if db.get_referrer_id(message.from_user.id):
+        referrer = db.get_referrer_id(message.from_user.id)
+        price = MESSAGES_PAY[f"{payload_name}"] / 100 * 0.3
+
+        db.add_balance_ref(price, referrer)
+
 
 
 # ===================================================
@@ -217,11 +235,29 @@ async def type_of_add(callback: CallbackQuery):
 # ================= Добавление одного ===============
 @dp.callback_query_handler(lambda c: c.data == "add_products_one")
 async def data_add_one(callback: CallbackQuery):
-    await callback.message.edit_reply_markup()
     await callback.message.edit_text(MESSAGES["add_products_one_message"])
+    await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES["BTN_BACK"])
 
     state = dp.current_state(user=callback.from_user.id)
     await state.set_state(StatesSaveProducts.all()[1])
+
+
+# =================== НАЗАД =======================
+@dp.callback_query_handler(lambda c: c.data == "back", state=StatesSaveProducts.STATE_ADD_ONE | StatesSaveProducts.STATE_ADD_MORE)
+async def back(callback: CallbackQuery):
+    count_add_products = len(db.get_add_tovar(callback.message.chat.id))
+    sub_count_products = db.get_sub_count_products(callback.from_user.id)
+    sub_count_products = int(re.search(r'\d+', str(sub_count_products))[0])
+
+    if count_add_products < sub_count_products:
+        await callback.message.edit_text(MESSAGES["add_product"])
+        await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES["BTN_ADD_PRODUCTS"])
+    else:
+        await callback.message.edit_text(MESSAGES["max_products_sub"])
+
+    state = dp.current_state(user=callback.from_user.id)
+    await state.reset_state(with_data=False)
+
 
 
 # ================= Тот Или Не Тот =================
@@ -264,7 +300,6 @@ async def type_of_add(callback: CallbackQuery):
         art = data["art"]
         price_spp = data["price_spp"]
 
-
         est = db.there_is_product(callback.message.chat.id, art)
         await callback.message.edit_reply_markup()
 
@@ -288,8 +323,9 @@ async def type_of_add(callback: CallbackQuery):
 # ================= Добавление Нескольких ===============
 @dp.callback_query_handler(lambda c: c.data == "add_products_more")
 async def file_add_more(callback: CallbackQuery):
-    await callback.message.edit_reply_markup()
     await callback.message.edit_text(MESSAGES["add_products_more_message"])
+    await callback.message.edit_reply_markup(reply_markup=BUTTON_TYPES["BTN_BACK"])
+
 
     state = dp.current_state(user=callback.from_user.id)
     await state.set_state(StatesSaveProducts.all()[0])
@@ -366,7 +402,7 @@ async def delete_products(callback: CallbackQuery):
     db.delete_tovar(art, callback.message.chat.id)
     get_all_art = db.get_all_users_art(art)
 
-    if get_all_art == []:
+    if not get_all_art:
         db.delete_tovar_in_products_table(art)
 
     await callback.answer()
@@ -384,7 +420,7 @@ async def delete_all_products(callback: CallbackQuery):
         art = int(re.search(r'\d+', str(art))[0])
 
         get_all_art = db.get_all_users_art(art)
-        if get_all_art == []:
+        if not get_all_art:
             db.delete_tovar_in_products_table(art)
 
     await callback.answer()
@@ -393,8 +429,13 @@ async def delete_all_products(callback: CallbackQuery):
 # ===================== Кнопка отмены =====================
 @dp.callback_query_handler(lambda c: c.data == 'cancellation')
 async def cancellation_inline(callback: CallbackQuery):
+
     await callback.message.edit_reply_markup()
-    await callback.message.edit_text(MESSAGES["cancellation"])
+    if callback.message.text == MESSAGES["there_is_subscription"] or callback.message.text == MESSAGES["add_product"]:
+        await callback.message.edit_text(MESSAGES["cancellation_products"])
+
+    elif callback.message.text == MESSAGES["subscription_description"] or "Выбери на какое время подписка для" in callback.message.text:
+        await callback.message.edit_text(MESSAGES["cancellation_sub"])
 
     await callback.answer()
 

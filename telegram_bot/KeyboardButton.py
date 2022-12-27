@@ -15,8 +15,13 @@ btn_type_of_subscription4 = InlineKeyboardButton(text="500 товаров", call
 btn_cancellation = InlineKeyboardButton('✖️ Отмена ✖️', callback_data="cancellation")
 
 
+# КНОПКА НАЗАД
+btn_back = InlineKeyboardButton('🔙 Назад 🔙', callback_data="back")
+
+
 # КНОПКИ ПОДПИСКИ КОЛ-ВО ВРЕМЕНИ ПРИ 10 ТОВАРАХ
-btn_type_of_subscription_time_1 = InlineKeyboardButton(text="Месяц - 290р", callback_data="5")
+# btn_type_of_subscription_time_1 = InlineKeyboardButton(text="Месяц - 290р", callback_data="5")
+btn_type_of_subscription_time_1 = InlineKeyboardButton(text="Месяц - 60р", callback_data="5")
 btn_type_of_subscription_time_2 = InlineKeyboardButton(text="3 месяца - 790р", callback_data="6")
 btn_type_of_subscription_time_3 = InlineKeyboardButton(text="6 месяцев - 1490р", callback_data="7")
 btn_type_of_subscription_time_4 = InlineKeyboardButton(text="12 месяцев - 2790р", callback_data="8")
@@ -59,6 +64,10 @@ btn_delete_all_products = InlineKeyboardButton(text="❌ DEL ❌", callback_data
 btn_tot_products = InlineKeyboardButton(text="✔️ Да ✔️", callback_data="tot_products")
 btn_ne_tot_products = InlineKeyboardButton(text="✖️ Нет ✖️", callback_data="ne_tot_products")
 
+# ВЫВЕСТИ РЕФЕРАЛЬНЫЙ БАЛАНС
+btn_ref_balance = InlineKeyboardButton(text="Вывести баланс", url="https://t.me/Stantes")
+
+
 BUTTON_TYPES = {
     "BTN_HOME": ReplyKeyboardMarkup(resize_keyboard=True).add(btn_profile, btn_subscription).add(btn_products).add(btn_info, btn_ref),
     "BTN_SUBSCRIPTIONS_PRICE": InlineKeyboardMarkup().add(btn_type_of_subscription1, btn_type_of_subscription2).add(
@@ -83,4 +92,7 @@ BUTTON_TYPES = {
     "BTN_VIEWS_PRODUCTS": InlineKeyboardMarkup().add(btn_save_add_products, btn_delete_add_products),
     "BTN_DELETE_ALL_PRODUCTS": InlineKeyboardMarkup().add(btn_delete_all_products).add(btn_cancellation),
     "BTN_TOT_OR_NO": InlineKeyboardMarkup().add(btn_tot_products, btn_ne_tot_products),
+
+    "BTN_BACK": InlineKeyboardMarkup().add(btn_back),
+    "BTN_BALANCE": InlineKeyboardMarkup().add(btn_ref_balance),
 }
